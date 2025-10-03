@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios'
-import { io } from 'socket.io-client'
 import VoteBoard from './VoteBoard'
+import { io } from "socket.io-client";
 
 export default function Dashboard({ token, me, onLogout }){
   const [classes, setClasses] = useState([])
@@ -10,14 +10,11 @@ export default function Dashboard({ token, me, onLogout }){
   useEffect(()=>{
     // load classes
     axios.get('https://sg-vote-xxqh.onrender.com/api/classes').then(r => setClasses(r.data))
-    const socket = io('https://sg-vote-xxqh.onrender.com', { transports: ['websocket','polling'] });
-    socket.on('standings', (payload) => {
-      console.log("standings payload:", payload);
-      if (Array.isArray(payload)) {
-        setClasses(payload);
-      } else {
-        console.error("Nem array jött standings-ben:", payload);
-      }
+    const socket = io("https://sg-vote-xxqh.onrender.com", {
+      transports: ["websocket"] // vagy elég ["websocket", "polling"]
+    });   
+    socket.on("connect", () => {
+      console.log("Csatlakozva a szerverhez:", socket.id);
     });
     return ()=> socket.disconnect()
   }, [])

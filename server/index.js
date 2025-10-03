@@ -1,3 +1,7 @@
+import express from "express";
+import http from "http";
+import { Server } from "socket.io";
+
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
@@ -9,16 +13,15 @@ const { generateToken, verifyTokenMiddleware } = require('./auth');
 
 const app = express();
 const server = http.createServer(app);
-const { Server } = require('socket.io');
+const { Server } = require("socket.io");
 const io = new Server(server, {
-  cors: { 
-    origin: [
-      'https://sg-vote-xxqh.onrender.com',
-      'https://sg-vote-1.onrender.com'
-    ],
+  cors: {
+    origin: "*", // vagy ha szigorúbb akarsz lenni: ["https://sg-vote-1.onrender.com"]
     methods: ["GET", "POST"]
-  }
+  },
+  transports: ["websocket", "polling"]
 });
+
 
 
 app.use(cors());
@@ -142,20 +145,17 @@ app.get('/api/me', verifyTokenMiddleware, (req, res) => {
 });
 
 // --- socket.io connection ---
-io.on('connection', (socket) => {
-  // lekérdezzük a szavazatok számát osztályonként
-  const counts = db.prepare('SELECT class_id, COUNT(*) as cnt FROM votes GROUP BY class_id').all();
-  const countsMap = {};
-  counts.forEach(r => countsMap[r.class_id] = r.cnt);
+io.on("connection", (socket) => {
+  console.log("Új kliens csatlakozott:", socket.id);
 
-  // lekérdezzük az összes osztályt
-  const classes = db.prepare('SELECT id, name, room, theme FROM classes ORDER BY name').all();
+  socket.on("vote", (data) => {
+    console.log("Vote event:", data);
+    io.emit("voteUpdate", data);
+  });
 
-  // minden osztályhoz hozzárendeljük a votes mezőt
-  const payload = classes.map(c => ({ ...c, votes: countsMap[c.id] || 0 }));
-
-  // elküldjük a frontendnek
-  socket.emit('standings', payload);
+  socket.on("disconnect", () => {
+    console.log("Kliens lecsatlakozott:", socket.id);
+  });
 });
 
 
@@ -165,5 +165,7 @@ app.get('*', (req, res) => {
   res.sendFile(path.resolve(__dirname, '../client/build', 'index.html'));
 });
 
-const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => console.log(`Server listening on ${PORT}`));
+const PORT = process.env.PORT || 10000;
+server.listen(PORT, () => {
+  console.log(`✅ Server listening on ${PORT}`);
+});
