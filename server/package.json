@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "import": "node import_students.js"
+    "import-students": "node import_students.js",
+    "import-classes": "node import_classes.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
@@ -16,5 +17,8 @@
     "sqlite3": "^5.1.6",
     "better-sqlite3": "^8.4.0",
     "csv-parse": "^5.4.0"
+  },
+  "engines": {
+    "node": "18.x"
   }
 }
