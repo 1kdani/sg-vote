@@ -12,7 +12,12 @@ export default function Dashboard({ token, me, onLogout }){
     axios.get('https://sg-vote-xxqh.onrender.com/api/classes').then(r => setClasses(r.data))
     const socket = io('https://sg-vote-xxqh.onrender.com', { transports: ['websocket','polling'] });
     socket.on('standings', (payload) => {
-      if (Array.isArray(payload)) setClasses(payload);
+      console.log("standings payload:", payload);
+      if (Array.isArray(payload)) {
+        setClasses(payload);
+      } else {
+        console.error("Nem array jött standings-ben:", payload);
+      }
     });
     return ()=> socket.disconnect()
   }, [])

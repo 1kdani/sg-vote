@@ -11,7 +11,13 @@ const app = express();
 const server = http.createServer(app);
 const { Server } = require('socket.io');
 const io = new Server(server, {
-  cors: { origin: ['https://sg-vote-xxqh.onrender.com'] }
+  cors: { 
+    origin: [
+      'https://sg-vote-xxqh.onrender.com',
+      'https://sg-vote-1.onrender.com'
+    ],
+    methods: ["GET", "POST"]
+  }
 });
 
 
@@ -130,8 +136,9 @@ app.post('/api/admin/add-class', (req, res) => {
 });
 
 app.get('/api/me', verifyTokenMiddleware, (req, res) => {
-  const user = db.prepare('SELECT id, name, class, votes_used FROM users WHERE id = ?').get(req.user.id);
-  res.json(user);
+  const user = db.prepare('SELECT id, name, class_id, votes_used FROM users WHERE id = ?').get(req.user.id);
+  const userClass = db.prepare('SELECT name FROM classes WHERE id = ?').get(user.class_id)?.name;
+  res.json({ ...user, class: userClass });
 });
 
 // --- socket.io connection ---
