@@ -11,7 +11,9 @@ export default function Dashboard({ token, me, onLogout }){
     // load classes
     axios.get('https://sg-vote-xxqh.onrender.com/api/classes').then(r => setClasses(r.data))
     const socket = io('https://sg-vote-xxqh.onrender.com', { transports: ['websocket','polling'] });
-    socket.on('standings', (payload)=> setClasses(payload))
+    socket.on('standings', (payload) => {
+      if (Array.isArray(payload)) setClasses(payload);
+    });
     return ()=> socket.disconnect()
   }, [])
 
@@ -47,9 +49,12 @@ export default function Dashboard({ token, me, onLogout }){
           </div>
 
           <div className="bg-white p-4 rounded shadow">
-            <h3 className="font-semibold mb-2">Állás (valós idő)</h3>
-            {classes.map(c=> (
-              <div key={c.id} className="flex justify-between text-sm py-1"><div>{c.name}</div><div>{c.votes}</div></div>
+            <h3 className="font-semibold mb-2">Állás</h3>
+            {(Array.isArray(classes) ? classes : []).map(c=> (
+              <div key={c.id} className="flex justify-between text-sm py-1">
+                <div>{c.name}</div>
+                <div>{c.votes}</div>
+              </div>
             ))}
           </div>
         </aside>
