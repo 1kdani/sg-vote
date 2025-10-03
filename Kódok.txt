@@ -1,0 +1,7 @@
+Client: npm run dev
+
+node init_db.js
+node import_students.js
+node import_classes.js
+npm run import
+npm start

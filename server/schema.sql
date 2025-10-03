@@ -1,0 +1,18 @@
+-- Táblák létrehozása
+
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS votes;
+
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    class TEXT NOT NULL,
+    password_hash TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS votes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    class_voted TEXT NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+);
