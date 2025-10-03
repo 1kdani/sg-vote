@@ -12,18 +12,15 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server, {
   cors: {
-    origin: "*", // vagy ha szigorúbb akarsz lenni: ["https://sg-vote-1.onrender.com"]
+    origin: "https://sg-vote-1.onrender.com", // a frontend URL-je!
     methods: ["GET", "POST"]
-  },
-  transports: ["websocket", "polling"]
+  }
 });
-
 
 
 app.use(cors());
 app.use(express.json());
 
-// --- STATIC FILES (React build) ---
 app.use(express.static(path.join(__dirname, '../client/dist')));
 app.get('*', (req, res) => {
   res.sendFile(path.resolve(__dirname, '../client/dist/index.html'));
