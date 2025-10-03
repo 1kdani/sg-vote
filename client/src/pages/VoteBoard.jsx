@@ -23,7 +23,7 @@ export default function VoteBoard({ classes = [], token, user, onUserUpdate }){
     <div>
       <h3 className="text-lg font-semibold mb-4">Osztályok — Válassz</h3>
       <div className="grid sm:grid-cols-2 gap-4">
-        {classes.map(c => (
+        {Array.isArray(classes) ? classes.map(c => (
           <div key={c.id} className="bg-white p-4 rounded shadow">
             <div className="flex justify-between">
               <div>
@@ -39,7 +39,7 @@ export default function VoteBoard({ classes = [], token, user, onUserUpdate }){
             </div>
             {user && user.class === c.name && <div className="mt-2 text-xs text-red-600">Saját osztályra nem szavazhatsz</div>}
           </div>
-        ))}
+        )) : <div>Betöltés...</div>}
       </div>
     </div>
   )

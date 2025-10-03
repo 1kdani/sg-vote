@@ -40,7 +40,7 @@ export default function Dashboard({ token, me, onLogout }){
           <div className="bg-white p-4 rounded shadow">
             <h3 className="font-semibold mb-2">TOP 3</h3>
             <ol className="list-decimal pl-5">
-              {classes.slice().sort((a,b)=>b.votes - a.votes).slice(0,3).map(c => (
+              {(Array.isArray(classes) ? classes.slice().sort((a,b)=>b.votes - a.votes) : []).slice(0,3).map(c => (
                 <li key={c.id} className="mb-1">{c.name} — {c.votes} szavazat</li>
               ))}
             </ol>
