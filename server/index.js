@@ -18,6 +18,11 @@ app.use(express.json());
 // --- STATIC FILES (React build) ---
 app.use(express.static(path.join(__dirname, '../client/build')));
 
+app.get('*', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../client/build', 'index.html'));
+});
+
+
 // --- API ROUTES ---
 // Init DB from migration file if empty
 const fs = require('fs');
@@ -32,9 +37,13 @@ app.post('/api/login', (req, res) => {
   if (!user) return res.status(401).json({ error: 'No such user' });
   const ok = bcrypt.compareSync(password, user.password_hash);
   if (!ok) return res.status(401).json({ error: 'Invalid creds' });
+
   const token = generateToken(user);
-  res.json({ token, name: user.name, class: user.class, votes_used: user.votes_used });
+  const userClass = db.prepare('SELECT name FROM classes WHERE id = ?').get(user.class_id)?.name;
+
+  res.json({ token, name: user.name, class: userClass, votes_used: user.votes_used });
 });
+
 
 app.get('/api/classes', (req, res) => {
   const classes = db.prepare('SELECT id, name, room, theme FROM classes ORDER BY name').all();
@@ -46,8 +55,58 @@ app.get('/api/classes', (req, res) => {
 
 // --- Protected voting endpoint ---
 app.post('/api/vote', verifyTokenMiddleware, (req, res) => {
-  // ... ugyanaz a logika mint nálad ...
+  const userId = req.user.id;
+  const { classId, count = 1 } = req.body;
+
+  if (!classId) return res.status(400).json({ error: 'Missing classId' });
+  if (count < 1 || count > 5) return res.status(400).json({ error: 'Invalid count' });
+
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+  if (!user) return res.status(401).json({ error: 'No such user' });
+
+  const targetClass = db.prepare('SELECT * FROM classes WHERE id = ?').get(classId);
+  if (!targetClass) return res.status(400).json({ error: 'No such class' });
+
+  // check remaining votes
+  const remaining = 5 - user.votes_used;
+  if (remaining <= 0) return res.status(403).json({ error: 'No remaining votes' });
+  if (count > remaining) return res.status(400).json({ error: 'Not enough remaining votes' });
+
+  // cannot vote for own class
+  const userClassName = db.prepare('SELECT name FROM classes WHERE id = ?').get(user.class_id)?.name;
+  if (userClassName === targetClass.name) return res.status(403).json({ error: 'Cannot vote for own class' });
+
+  // insert votes atomically
+  const insertVote = db.prepare('INSERT INTO votes (user_id, class_id) VALUES (?, ?)');
+  const updateUser = db.prepare('UPDATE users SET votes_used = votes_used + ? WHERE id = ?');
+  const trx = db.transaction((n) => {
+    for (let i = 0; i < n; i++) insertVote.run(userId, classId);
+    updateUser.run(n, userId);
+  });
+
+  try {
+    trx(count);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'DB error' });
+  }
+
+  // return updated user
+  const updatedUser = db.prepare('SELECT id, name, class_id, votes_used FROM users WHERE id = ?').get(userId);
+  const updatedUserClass = db.prepare('SELECT name FROM classes WHERE id = ?').get(updatedUser.class_id)?.name;
+  updatedUser.class = updatedUserClass;
+
+  // emit updated standings
+  const counts = db.prepare('SELECT class_id, COUNT(*) as cnt FROM votes GROUP BY class_id').all();
+  const countsMap = {};
+  counts.forEach(r => countsMap[r.class_id] = r.cnt);
+  const classes = db.prepare('SELECT id, name, room, theme FROM classes ORDER BY name').all();
+  const payload = classes.map(c => ({ ...c, votes: countsMap[c.id] || 0 }));
+  io.emit('standings', payload);
+
+  res.json({ ok: true, user: updatedUser });
 });
+
 
 // --- admin endpoints ---
 app.post('/api/admin/add-class', (req, res) => {
