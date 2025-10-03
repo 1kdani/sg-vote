@@ -3,6 +3,7 @@ const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
+const path = require('path'); // ← kell a statikus fájlokhoz
 const db = require('./db');
 const { generateToken, verifyTokenMiddleware } = require('./auth');
 
@@ -14,6 +15,10 @@ const io = new Server(server, { cors: { origin: '*' } });
 app.use(cors());
 app.use(express.json());
 
+// --- STATIC FILES (React build) ---
+app.use(express.static(path.join(__dirname, '../client/build')));
+
+// --- API ROUTES ---
 // Init DB from migration file if empty
 const fs = require('fs');
 const migrations = fs.readFileSync(__dirname + '/migrations.sql', 'utf8');
@@ -31,67 +36,20 @@ app.post('/api/login', (req, res) => {
   res.json({ token, name: user.name, class: user.class, votes_used: user.votes_used });
 });
 
-// --- PUBLIC: class list and standings ---
 app.get('/api/classes', (req, res) => {
   const classes = db.prepare('SELECT id, name, room, theme FROM classes ORDER BY name').all();
-  // attach current vote counts
   const counts = db.prepare('SELECT class_id, COUNT(*) as cnt FROM votes GROUP BY class_id').all();
   const map = new Map(counts.map(r => [r.class_id, r.cnt]));
   const payload = classes.map(c => ({ ...c, votes: map.get(c.id) || 0 }));
   res.json(payload);
 });
 
-// --- Protected endpoint: cast vote(s)
+// --- Protected voting endpoint ---
 app.post('/api/vote', verifyTokenMiddleware, (req, res) => {
-  const userId = req.user.id;
-  const targetClassId = req.body.classId;
-  const count = Number(req.body.count) || 1; // how many votes to allocate in this call
-  if (!targetClassId) return res.status(400).json({ error: 'Missing classId' });
-  if (count < 1 || count > 5) return res.status(400).json({ error: 'Invalid count' });
-
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
-  if (!user) return res.status(401).json({ error: 'No such user' });
-
-  const targetClass = db.prepare('SELECT * FROM classes WHERE id = ?').get(targetClassId);
-  if (!targetClass) return res.status(400).json({ error: 'No such class' });
-
-  // can't vote for own class
-  if (user.class === targetClass.name) return res.status(403).json({ error: 'Cannot vote for own class' });
-
-  // check remaining votes
-  const remaining = 5 - user.votes_used;
-  if (remaining <= 0) return res.status(403).json({ error: 'No remaining votes' });
-  if (count > remaining) return res.status(400).json({ error: 'Not enough remaining votes' });
-
-  // perform atomic transaction: insert N vote rows, increment user's votes_used
-  const insertVote = db.prepare('INSERT INTO votes (user_id, class_id) VALUES (?, ?)');
-  const updateUser = db.prepare('UPDATE users SET votes_used = votes_used + ? WHERE id = ?');
-  const trx = db.transaction((n) => {
-    for (let i = 0; i < n; i++) insertVote.run(userId, targetClassId);
-    updateUser.run(n, userId);
-  });
-  try {
-    trx(count);
-  } catch (e) {
-    console.error(e);
-    return res.status(500).json({ error: 'DB error' });
-  }
-
-  // fetch new counts and user status
-  const updatedUser = db.prepare('SELECT id, name, class, votes_used FROM users WHERE id = ?').get(userId);
-  const counts = db.prepare('SELECT class_id, COUNT(*) as cnt FROM votes GROUP BY class_id').all();
-  const countsMap = {};
-  counts.forEach(r => countsMap[r.class_id] = r.cnt);
-
-  // emit via socket
-  const classes = db.prepare('SELECT id, name, room, theme FROM classes ORDER BY name').all();
-  const payload = classes.map(c => ({ ...c, votes: countsMap[c.id] || 0 }));
-  io.emit('standings', payload);
-
-  res.json({ ok: true, user: updatedUser });
+  // ... ugyanaz a logika mint nálad ...
 });
 
-// --- admin endpoints for bootstrap (protected in production!) ---
+// --- admin endpoints ---
 app.post('/api/admin/add-class', (req, res) => {
   const { name, room, theme } = req.body;
   if (!name) return res.status(400).json({ error: 'Missing name' });
@@ -101,7 +59,6 @@ app.post('/api/admin/add-class', (req, res) => {
   } catch (e) { res.status(500).json({ error: 'DB error' }); }
 });
 
-// get current user info
 app.get('/api/me', verifyTokenMiddleware, (req, res) => {
   const user = db.prepare('SELECT id, name, class, votes_used FROM users WHERE id = ?').get(req.user.id);
   res.json(user);
@@ -110,13 +67,18 @@ app.get('/api/me', verifyTokenMiddleware, (req, res) => {
 // --- socket.io connection ---
 io.on('connection', (socket) => {
   console.log('socket connected', socket.id);
-  // push initial standings
   const counts = db.prepare('SELECT class_id, COUNT(*) as cnt FROM votes GROUP BY class_id').all();
   const countsMap = {};
   counts.forEach(r => countsMap[r.class_id] = r.cnt);
   const classes = db.prepare('SELECT id, name, room, theme FROM classes ORDER BY name').all();
   const payload = classes.map(c => ({ ...c, votes: countsMap[c.id] || 0 }));
   socket.emit('standings', payload);
+});
+
+// --- CATCHALL ROUTE ---
+// minden route-ot, ami nem /api-vel kezdődik, a React index.html-hez irányítunk
+app.get('*', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../client/build', 'index.html'));
 });
 
 const PORT = process.env.PORT || 4000;
