@@ -9,14 +9,14 @@ export default function Dashboard({ token, me, onLogout }){
 
   useEffect(()=>{
     // load classes
-    axios.get('http://localhost:4000/api/classes').then(r => setClasses(r.data))
-    const socket = io('http://localhost:4000')
+    axios.get('https://sg-vote-xxqh.onrender.com/api/classes').then(r => setClasses(r.data))
+    const socket = io('https://sg-vote-xxqh.onrender.com')
     socket.on('standings', (payload)=> setClasses(payload))
     return ()=> socket.disconnect()
   }, [])
 
   useEffect(()=>{
-    if (!user && token) axios.get('http://localhost:4000/api/me', { headers: { Authorization: 'Bearer ' + token } }).then(r=>setUser(r.data))
+    if (!user && token) axios.get('https://sg-vote-xxqh.onrender.com/api/me', { headers: { Authorization: 'Bearer ' + token } }).then(r=>setUser(r.data))
   }, [token])
 
   return (

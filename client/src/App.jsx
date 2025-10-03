@@ -6,7 +6,7 @@ export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [me, setMe] = useState(null);
 
-  const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+  const apiBase = import.meta.env.VITE_API_BASE_URL || 'https://sg-vote-xxqh.onrender.com';
 
   useEffect(() => {
     if (token) {

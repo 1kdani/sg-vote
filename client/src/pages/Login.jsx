@@ -9,7 +9,7 @@ export default function Login({ onLogin }){
   async function submit(e){
     e.preventDefault();
     try{
-      const res = await axios.post('http://localhost:4000/api/login', { name, password });
+      const res = await axios.post('https://sg-vote-xxqh.onrender.com/api/login', { name, password });
       onLogin(res.data.token, { name: res.data.name, class: res.data.class, votes_used: res.data.votes_used });
     } catch (e) { setErr(e.response?.data?.error || 'Hiba'); }
   }

@@ -10,7 +10,7 @@ export default function VoteBoard({ classes = [], token, user, onUserUpdate }){
     if (!confirm(`Biztosan szeretnél ${count} szavazatot adni erre az osztályra?`)) return;
     setBusy(true)
     try{
-      const res = await axios.post('http://localhost:4000/api/vote', { classId, count }, { headers: { Authorization: 'Bearer ' + token } });
+      const res = await axios.post('https://sg-vote-xxqh.onrender.com/api/vote', { classId, count }, { headers: { Authorization: 'Bearer ' + token } });
       // server visszaadja a frissített user-t
       onUserUpdate(res.data.user)
     } catch (e){
