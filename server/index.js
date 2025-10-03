@@ -1,7 +1,3 @@
-import express from "express";
-import http from "http";
-import { Server } from "socket.io";
-
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
