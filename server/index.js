@@ -12,7 +12,7 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server, {
   cors: {
-    origin: "https://sg-vote-1.onrender.com", // a frontend URL-je!
+    origin: "*",   // minden origin-t engedünk
     methods: ["GET", "POST"]
   }
 });
