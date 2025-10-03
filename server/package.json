@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "postinstall": "cd ../client && npm install && npm run build",
     "import-students": "node import_students.js",
     "import-classes": "node import_classes.js"
   },
