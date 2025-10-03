@@ -6,21 +6,14 @@ export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [me, setMe] = useState(null);
 
-  const apiBase = import.meta.env.VITE_API_BASE_URL || 'https://sg-vote-xxqh.onrender.com';
-
   useEffect(() => {
     if (token) {
-      fetch(`${apiBase}/api/me`, {
+      fetch(process.env.REACT_APP_API_BASE_URL ? process.env.REACT_APP_API_BASE_URL + '/api/me' : 'https://sg-vote-xxqh.onrender.com/api/me', {
         headers: { Authorization: 'Bearer ' + token }
-      })
-      .then(r => r.json())
-      .then(data => { 
-        if (data && data.id) setMe(data); 
-        else { setToken(null); localStorage.removeItem('token'); } 
-      })
-      .catch(() => { setToken(null); localStorage.removeItem('token'); });
+      }).then(r => r.json()).then(data => { if (data && data.id) setMe(data); else { setToken(null); localStorage.removeItem('token'); } }).catch(()=>{ setToken(null); localStorage.removeItem('token'); });
     }
   }, [token]);
+
 
 
   if (!token) return <Login onLogin={(t, user) => { setToken(t); localStorage.setItem('token', t); setMe(user); }} />;
