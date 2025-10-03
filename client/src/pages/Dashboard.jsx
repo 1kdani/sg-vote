@@ -10,7 +10,7 @@ export default function Dashboard({ token, me, onLogout }){
   useEffect(()=>{
     // load classes
     axios.get('https://sg-vote-xxqh.onrender.com/api/classes').then(r => setClasses(r.data))
-    const socket = io('https://sg-vote-xxqh.onrender.com')
+    const socket = io('https://sg-vote-xxqh.onrender.com', { transports: ['websocket','polling'] });
     socket.on('standings', (payload)=> setClasses(payload))
     return ()=> socket.disconnect()
   }, [])

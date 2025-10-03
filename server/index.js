@@ -10,7 +10,10 @@ const { generateToken, verifyTokenMiddleware } = require('./auth');
 const app = express();
 const server = http.createServer(app);
 const { Server } = require('socket.io');
-const io = new Server(server, { cors: { origin: '*' } });
+const io = new Server(server, {
+  cors: { origin: ['https://sg-vote-xxqh.onrender.com'] }
+});
+
 
 app.use(cors());
 app.use(express.json());
