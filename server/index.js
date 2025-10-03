@@ -9,13 +9,8 @@ const { generateToken, verifyTokenMiddleware } = require('./auth');
 
 const app = express();
 const server = http.createServer(app);
-const { Server } = require("socket.io");
-const io = new Server(server, {
-  cors: {
-    origin: "*",   // minden origin-t engedünk
-    methods: ["GET", "POST"]
-  }
-});
+const { Server } = require('socket.io');
+const io = new Server(server, { cors: { origin: '*' } });
 
 
 app.use(cors());
