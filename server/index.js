@@ -154,13 +154,6 @@ io.on("connection", (socket) => {
   });
 });
 
-
-// --- CATCHALL ROUTE ---
-// minden route-ot, ami nem /api-vel kezdődik, a React index.html-hez irányítunk
-app.get('*', (req, res) => {
-  res.sendFile(path.resolve(__dirname, '../client/build', 'index.html'));
-});
-
 const PORT = process.env.PORT || 10000;
 server.listen(PORT, () => {
   console.log(`✅ Server listening on ${PORT}`);
