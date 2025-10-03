@@ -21,6 +21,10 @@ export default function Dashboard({ token, me, onLogout }){
     if (!user && token) axios.get('https://sg-vote-xxqh.onrender.com/api/me', { headers: { Authorization: 'Bearer ' + token } }).then(r=>setUser(r.data))
   }, [token])
 
+  const sortedTop3 = Array.isArray(classes) 
+  ? [...classes].sort((a,b) => (b.votes || 0) - (a.votes || 0)).slice(0,3)
+  : [];
+
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="flex items-center justify-between p-4 bg-white shadow">
@@ -42,7 +46,7 @@ export default function Dashboard({ token, me, onLogout }){
           <div className="bg-white p-4 rounded shadow">
             <h3 className="font-semibold mb-2">TOP 3</h3>
             <ol className="list-decimal pl-5">
-              {(Array.isArray(classes) ? classes.slice().sort((a,b)=>b.votes - a.votes) : []).slice(0,3).map(c => (
+              {sortedTop3.map(c => (
                 <li key={c.id} className="mb-1">{c.name} — {c.votes} szavazat</li>
               ))}
             </ol>

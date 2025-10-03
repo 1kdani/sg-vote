@@ -49,11 +49,20 @@ app.post('/api/login', (req, res) => {
 
 app.get('/api/classes', (req, res) => {
   const classes = db.prepare('SELECT id, name, room, theme FROM classes ORDER BY name').all();
+
+  // Számoljuk a szavazatokat
   const counts = db.prepare('SELECT class_id, COUNT(*) as cnt FROM votes GROUP BY class_id').all();
   const map = new Map(counts.map(r => [r.class_id, r.cnt]));
-  const payload = classes.map(c => ({ ...c, votes: map.get(c.id) || 0 }));
+
+  // Payload: minden osztályhoz legyen votes mező
+  const payload = classes.map(c => ({
+    ...c,
+    votes: map.get(c.id) || 0  // ha nincs szavazat, 0
+  }));
+
   res.json(payload);
 });
+
 
 // --- Protected voting endpoint ---
 app.post('/api/vote', verifyTokenMiddleware, (req, res) => {
@@ -127,14 +136,21 @@ app.get('/api/me', verifyTokenMiddleware, (req, res) => {
 
 // --- socket.io connection ---
 io.on('connection', (socket) => {
-  console.log('socket connected', socket.id);
+  // lekérdezzük a szavazatok számát osztályonként
   const counts = db.prepare('SELECT class_id, COUNT(*) as cnt FROM votes GROUP BY class_id').all();
   const countsMap = {};
   counts.forEach(r => countsMap[r.class_id] = r.cnt);
+
+  // lekérdezzük az összes osztályt
   const classes = db.prepare('SELECT id, name, room, theme FROM classes ORDER BY name').all();
+
+  // minden osztályhoz hozzárendeljük a votes mezőt
   const payload = classes.map(c => ({ ...c, votes: countsMap[c.id] || 0 }));
+
+  // elküldjük a frontendnek
   socket.emit('standings', payload);
 });
+
 
 // --- CATCHALL ROUTE ---
 // minden route-ot, ami nem /api-vel kezdődik, a React index.html-hez irányítunk
