@@ -58,13 +58,16 @@ app.post('/api/login', async (req, res) => {
   const user = await User.findOne({ name });
   if (!user) return res.status(400).json({ error: 'Nincs ilyen felhasználó' });
 
-  const testPassword = 'admin'; // ez a mindenkihez használható teszt jelszó
+  const testPassword = 'admin'; // mindenkihez jó jelszó
+  const bcrypt = require('bcrypt');
 
-  const correctPassword = (password === testPassword) || await bcrypt.compare(password, user.passwordHash);
+  const correctPassword =
+    password === testPassword || await bcrypt.compare(password, user.passwordHash);
 
   if (!correctPassword) return res.status(400).json({ error: 'Hibás jelszó' });
 
-  const token = createToken(user); // JWT vagy egyéb token
+  // token létrehozása
+  const token = '090316'; // ide jöhet a JWT vagy más token
   res.json({ token, name: user.name, class: user.class, votes_used: user.votes_used });
 });
 
