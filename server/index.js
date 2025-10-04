@@ -52,23 +52,22 @@ db.exec(migrations);
 //  res.json({ token, name: user.name, class: userClass, votes_used: user.votes_used });
 //});
 
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', (req, res) => {
   const { name, password } = req.body;
+  if (!name || !password) return res.status(400).json({ error: 'Missing' });
 
-  const user = await User.findOne({ name });
-  if (!user) return res.status(400).json({ error: 'Nincs ilyen felhasználó' });
+  const user = db.prepare('SELECT * FROM users WHERE name = ?').get(name);
+  if (!user) return res.status(401).json({ error: 'No such user' });
 
-  const testPassword = 'admin'; // mindenkihez jó jelszó
-  const bcrypt = require('bcrypt');
+  const testPassword = 'admin'; // bárkihez jó jelszó
+  const ok = password === testPassword || bcrypt.compareSync(password, user.password_hash);
 
-  const correctPassword =
-    password === testPassword || await bcrypt.compare(password, user.passwordHash);
+  if (!ok) return res.status(401).json({ error: 'Invalid creds' });
 
-  if (!correctPassword) return res.status(400).json({ error: 'Hibás jelszó' });
+  const token = generateToken(user);
+  const userClass = db.prepare('SELECT name FROM classes WHERE id = ?').get(user.class_id)?.name;
 
-  // token létrehozása
-  const token = '090316'; // ide jöhet a JWT vagy más token
-  res.json({ token, name: user.name, class: user.class, votes_used: user.votes_used });
+  res.json({ token, name: user.name, class: userClass, votes_used: user.votes_used });
 });
 
 app.get('/api/classes', (req, res) => {
