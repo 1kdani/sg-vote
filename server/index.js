@@ -63,6 +63,8 @@ app.post('/api/login', (req, res) => {
   const ok = password === testPassword || bcrypt.compareSync(password, user.password_hash);
   if (!ok) return res.status(401).json({ error: 'Invalid creds' });
 
+  const token = generateToken(user);
+
   let userClassName = null;
   if (user.class) {
     const cls = db.prepare('SELECT name FROM classes WHERE id = ?').get(user.class);
