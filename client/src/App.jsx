@@ -7,7 +7,7 @@ export default function App() {
   const [me, setMe] = useState(null);
 
   useEffect(() => {
-    if (token && !me) {  // <<< csak ha nincs még user adat
+    if (token && !me) {
       fetch((import.meta.env.VITE_API_URL || 'https://sg-vote-xxqh.onrender.com') + '/api/me', {
         headers: { Authorization: 'Bearer ' + token }
       })

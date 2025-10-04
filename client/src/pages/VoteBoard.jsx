@@ -13,7 +13,6 @@ export default function VoteBoard({ classes = [], token, user, onUserUpdate }){
     setBusy(true)
     try{
       const res = await axios.post('https://sg-vote-xxqh.onrender.com/api/vote', { classId, count }, { headers: { Authorization: 'Bearer ' + token } });
-      // server visszaadja a frissített user-t
       onUserUpdate(res.data.user)
     } catch (e){
       alert(e.response?.data?.error || 'Hiba a szavazás során')
@@ -23,7 +22,7 @@ export default function VoteBoard({ classes = [], token, user, onUserUpdate }){
 
   return (
     <div>
-      <h3 className="text-lg font-semibold mb-4">Osztályok — Válassz</h3>
+      <h3 className="text-lg font-semibold mb-4">Osztályok</h3>
       <div className="grid sm:grid-cols-2 gap-4">
         {classes.map(c => (
           <div key={c.id} className="bg-white p-4 rounded shadow">  
@@ -39,7 +38,7 @@ export default function VoteBoard({ classes = [], token, user, onUserUpdate }){
               <button disabled={busy || remaining<=0 || (user && user.class === c.name)} onClick={()=>vote(c.id,Math.min(remaining,3))} className="px-3 py-1 rounded border">+{Math.min(remaining,3)}</button>
               <button disabled={busy || remaining<=0 || (user && user.class === c.name)} onClick={()=>vote(c.id,remaining)} className="px-3 py-1 rounded border">Mind ({remaining})</button>
             </div>
-            {user && user.class === c.name && <div className="mt-2 text-xs text-red-600">Saját osztályra nem szavazhatsz</div>}
+            {user && user.class === c.name && <div className="mt-2 text-xs text-red-600">Saját osztályra nem szavazhatsz!</div>}
           </div>
         ))}
       </div>
