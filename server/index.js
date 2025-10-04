@@ -64,10 +64,21 @@ app.post('/api/login', (req, res) => {
 
   if (!ok) return res.status(401).json({ error: 'Invalid creds' });
 
-  const token = generateToken(user);
-  const userClass = db.prepare('SELECT name FROM classes WHERE id = ?').get(user.class_id)?.name || "Ismeretlen";
-  res.json({ token, name: user.name, class: userClass, votes_used: user.votes_used });
+  // lekérjük a class nevét az osztály ID alapján
+  let userClass = null;
+  if (user.class_id) {
+    const cls = db.prepare('SELECT name FROM classes WHERE id = ?').get(user.class_id);
+    if (cls) userClass = cls.name;
+  }
 
+  const token = generateToken(user);
+
+  res.json({
+    token,
+    name: user.name,
+    class: userClass,  // <<< itt már a valódi osztály neve
+    votes_used: user.votes_used
+  });
 });
 
 app.get('/api/classes', (req, res) => {
