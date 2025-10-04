@@ -54,7 +54,7 @@ db.exec(migrations);
 
 app.post('/api/login', (req, res) => {
   const { name, password } = req.body;
-  if (!name || !password) return res.status(400).json({ error: 'Missing' });
+  if (!name || !password) return res.status(400).json({ error: 'Nem adtál meg adatokat!' });
 
   const user = db.prepare('SELECT * FROM users WHERE name = ?').get(name);
   if (!user) return res.status(401).json({ error: 'Nincs ilyen felhasználó!' });
