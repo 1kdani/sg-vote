@@ -61,22 +61,18 @@ app.post('/api/login', (req, res) => {
 
   const testPassword = 'admin'; // bárkihez jó jelszó
   const ok = password === testPassword || bcrypt.compareSync(password, user.password_hash);
-
   if (!ok) return res.status(401).json({ error: 'Invalid creds' });
 
-  // lekérjük a class nevét az osztály ID alapján
-  let userClass = null;
-  if (user.class_id) {
-    const cls = db.prepare('SELECT name FROM classes WHERE id = ?').get(user.class_id);
-    if (cls) userClass = cls.name;
+  let userClassName = null;
+  if (user.class) {
+    const cls = db.prepare('SELECT name FROM classes WHERE id = ?').get(user.class);
+    if (cls) userClassName = cls.name;
   }
-
-  const token = generateToken(user);
 
   res.json({
     token,
     name: user.name,
-    class: userClass,  // <<< itt már a valódi osztály neve
+    class: userClassName,  // FRONTENDNEK már a név
     votes_used: user.votes_used
   });
 });
