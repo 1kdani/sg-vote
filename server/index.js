@@ -65,9 +65,9 @@ app.post('/api/login', (req, res) => {
   if (!ok) return res.status(401).json({ error: 'Invalid creds' });
 
   const token = generateToken(user);
-  const userClass = db.prepare('SELECT name FROM classes WHERE id = ?').get(user.class_id)?.name;
-
+  const userClass = db.prepare('SELECT name FROM classes WHERE id = ?').get(user.class_id)?.name || "Ismeretlen";
   res.json({ token, name: user.name, class: userClass, votes_used: user.votes_used });
+
 });
 
 app.get('/api/classes', (req, res) => {
