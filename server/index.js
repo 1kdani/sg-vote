@@ -99,11 +99,11 @@ app.post('/api/admin/add-class', (req, res) => {
 
 app.get('/api/me', verifyTokenMiddleware, (req, res) => {
   // lekérjük a usert
-  const user = db.prepare('SELECT id, name, class, votes_used FROM users WHERE id = ?').get(req.user.id);
+  const user = db.prepare('SELECT id, name, class AS class_id, votes_used FROM users WHERE id = ?').get(req.user.id);
 
-  // lekérjük a saját osztály nevét a class ID alapján
-  const userClassName = user.class
-    ? db.prepare('SELECT name FROM classes WHERE id = ?').get(user.class)?.name
+  // lekérjük a saját osztály nevét a class_id alapján
+  const userClassName = user.class_id
+    ? db.prepare('SELECT name FROM classes WHERE id = ?').get(user.class_id)?.name
     : null;
 
   res.json({
@@ -111,6 +111,7 @@ app.get('/api/me', verifyTokenMiddleware, (req, res) => {
     class: userClassName // frontendre már a név kerül
   });
 });
+
 
 
 app.use(express.static(path.join(__dirname, '../client/dist')));
