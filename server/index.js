@@ -57,11 +57,11 @@ app.post('/api/login', (req, res) => {
   if (!name || !password) return res.status(400).json({ error: 'Missing' });
 
   const user = db.prepare('SELECT * FROM users WHERE name = ?').get(name);
-  if (!user) return res.status(401).json({ error: 'No such user' });
+  if (!user) return res.status(401).json({ error: 'Nincs ilyen felhasználó!' });
 
   const testPassword = 'admin'; // bárkihez jó jelszó
   const ok = password === testPassword || bcrypt.compareSync(password, user.password_hash);
-  if (!ok) return res.status(401).json({ error: 'Invalid creds' });
+  if (!ok) return res.status(401).json({ error: 'Hibás jelszó!' });
 
   const token = generateToken(user);
 
