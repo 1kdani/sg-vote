@@ -4,9 +4,8 @@ const http = require('http');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const path = require('path');
-const db = require('./db');
+const pool = require('./db');
 const { generateToken, verifyTokenMiddleware } = require('./auth');
-const jwt = require('jsonwebtoken');
 const fs = require('fs');
 
 const app = express();
@@ -17,16 +16,13 @@ const io = new Server(server, { cors: { origin: '*' } });
 app.use(cors());
 app.use(express.json());
 
-// --- Adatbázis inicializálása ---
-const migrations = fs.readFileSync(__dirname + '/migrations.sql', 'utf8');
-db.exec(migrations);
-
 // --- Bejelentkezés ---
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
   const { name, password } = req.body;
   if (!name || !password) return res.status(400).json({ error: 'Nem adtál meg adatokat!' });
 
-  const user = db.prepare('SELECT * FROM users WHERE name = ?').get(name);
+  const result = await pool.query('SELECT * FROM users WHERE name=$1', [name]);
+  const user = result.rows[0];
   if (!user) return res.status(401).json({ error: 'Nincs ilyen felhasználó!' });
 
   const testPassword = 'admin';
@@ -36,9 +32,9 @@ app.post('/api/login', (req, res) => {
   const token = generateToken(user);
 
   let userClassName = null;
-  if (user.class) {
-    const cls = db.prepare('SELECT name FROM classes WHERE id = ?').get(user.class);
-    if (cls) userClassName = cls.name;
+  if (user.class_id) {
+    const cls = await pool.query('SELECT name FROM classes WHERE id=$1', [user.class_id]);
+    if (cls.rows[0]) userClassName = cls.rows[0].name;
   }
 
   res.json({
@@ -50,16 +46,18 @@ app.post('/api/login', (req, res) => {
 });
 
 // --- Osztályok lekérése ---
-app.get('/api/classes', (req, res) => {
-  const classes = db.prepare('SELECT id, name, room, theme FROM classes ORDER BY name').all();
-  const counts = db.prepare('SELECT class_id, COUNT(*) as cnt FROM votes GROUP BY class_id').all();
-  const map = new Map(counts.map(r => [r.class_id, r.cnt]));
-  const payload = classes.map(c => ({ ...c, votes: map.get(c.id) || 0 }));
+app.get('/api/classes', async (req, res) => {
+  const classesRes = await pool.query('SELECT id, name, room, theme FROM classes ORDER BY name');
+  const votesRes = await pool.query('SELECT class_id, COUNT(*) as cnt FROM votes GROUP BY class_id');
+
+  const map = new Map(votesRes.rows.map(r => [r.class_id, parseInt(r.cnt)]));
+  const payload = classesRes.rows.map(c => ({ ...c, votes: map.get(c.id) || 0 }));
+
   res.json(payload);
 });
 
 // --- Szavazás ---
-app.post('/api/vote', verifyTokenMiddleware, (req, res) => {
+app.post('/api/vote', verifyTokenMiddleware, async (req, res) => {
   const userId = req.user.id;
   const targetClassId = req.body.classId;
   const count = Number(req.body.count) || 1;
@@ -67,46 +65,63 @@ app.post('/api/vote', verifyTokenMiddleware, (req, res) => {
   if (!targetClassId) return res.status(400).json({ error: 'Hiányzik az osztály azonosító!' });
   if (count < 1 || count > 5) return res.status(400).json({ error: 'Érvénytelen szavazat szám!' });
 
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+  const userRes = await pool.query('SELECT * FROM users WHERE id=$1', [userId]);
+  const user = userRes.rows[0];
   if (!user) return res.status(401).json({ error: 'Nincs ilyen felhasználó!' });
 
-  const targetClass = db.prepare('SELECT * FROM classes WHERE id = ?').get(targetClassId);
+  const targetRes = await pool.query('SELECT * FROM classes WHERE id=$1', [targetClassId]);
+  const targetClass = targetRes.rows[0];
   if (!targetClass) return res.status(400).json({ error: 'Nincs ilyen osztály!' });
 
-  const userClassName = user.class
-    ? db.prepare('SELECT name FROM classes WHERE id = ?').get(user.class)?.name
-    : null;
+  let userClassName = null;
+  if (user.class_id) {
+    const cls = await pool.query('SELECT name FROM classes WHERE id=$1', [user.class_id]);
+    if (cls.rows[0]) userClassName = cls.rows[0].name;
+  }
 
-  if (userClassName === targetClass.name) return res.status(403).json({ error: 'Saját osztályodra nem szavazhatsz!' });
+  if (userClassName === targetClass.name) {
+    return res.status(403).json({ error: 'Saját osztályodra nem szavazhatsz!' });
+  }
 
   const remaining = 5 - user.votes_used;
   if (remaining <= 0) return res.status(403).json({ error: 'Nincs több szavazatod!' });
   if (count > remaining) return res.status(400).json({ error: 'Nincs elég szavazatod!' });
 
-  const insertVote = db.prepare('INSERT INTO votes (user_id, class_id) VALUES (?, ?)');
-  const updateUser = db.prepare('UPDATE users SET votes_used = votes_used + ? WHERE id = ?');
-  const trx = db.transaction((n) => {
-    for (let i = 0; i < n; i++) insertVote.run(userId, targetClassId);
-    updateUser.run(n, userId);
-  });
-
   try {
-    trx(count);
+    await pool.query('BEGIN');
+
+    for (let i = 0; i < count; i++) {
+      await pool.query('INSERT INTO votes (user_id, class_id) VALUES ($1, $2)', [userId, targetClassId]);
+    }
+
+    await pool.query('UPDATE users SET votes_used = votes_used + $1 WHERE id=$2', [count, userId]);
+
+    await pool.query('COMMIT');
   } catch (err) {
+    await pool.query('ROLLBACK');
     console.error(err);
     return res.status(500).json({ error: 'Adatbázis hiba!' });
   }
 
-  const updatedUser = db.prepare('SELECT id, name, class, votes_used FROM users WHERE id = ?').get(userId);
-  updatedUser.class = updatedUser.class
-    ? db.prepare('SELECT name FROM classes WHERE id = ?').get(updatedUser.class)?.name
-    : null;
+  const updatedUserRes = await pool.query(
+    'SELECT id, name, class_id, votes_used FROM users WHERE id=$1',
+    [userId]
+  );
+  const updatedUser = updatedUserRes.rows[0];
 
-  const classes = db.prepare('SELECT id, name, room, theme FROM classes ORDER BY name').all();
-  const counts = db.prepare('SELECT class_id, COUNT(*) as cnt FROM votes GROUP BY class_id').all();
+  let updatedClassName = null;
+  if (updatedUser.class_id) {
+    const cls = await pool.query('SELECT name FROM classes WHERE id=$1', [updatedUser.class_id]);
+    if (cls.rows[0]) updatedClassName = cls.rows[0].name;
+  }
+  updatedUser.class = updatedClassName;
+
+  const classesRes = await pool.query('SELECT id, name, room, theme FROM classes ORDER BY name');
+  const countsRes = await pool.query('SELECT class_id, COUNT(*) as cnt FROM votes GROUP BY class_id');
+
   const countsMap = {};
-  counts.forEach(r => countsMap[r.class_id] = r.cnt);
-  const payload = classes.map(c => ({ ...c, votes: countsMap[c.id] || 0 }));
+  countsRes.rows.forEach(r => countsMap[r.class_id] = parseInt(r.cnt));
+  const payload = classesRes.rows.map(c => ({ ...c, votes: countsMap[c.id] || 0 }));
 
   io.emit('standings', payload);
 
@@ -114,11 +129,15 @@ app.post('/api/vote', verifyTokenMiddleware, (req, res) => {
 });
 
 // --- Admin: új osztály hozzáadása ---
-app.post('/api/admin/add-class', (req, res) => {
+app.post('/api/admin/add-class', async (req, res) => {
   const { name, room, theme } = req.body;
   if (!name) return res.status(400).json({ error: 'Hiányzik az osztály neve!' });
+
   try {
-    db.prepare('INSERT OR IGNORE INTO classes (name, room, theme) VALUES (?, ?, ?)').run(name, room || null, theme || null);
+    await pool.query(
+      'INSERT INTO classes (name, room, theme) VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING',
+      [name, room || null, theme || null]
+    );
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: 'Adatbázis hiba!' });
@@ -126,15 +145,23 @@ app.post('/api/admin/add-class', (req, res) => {
 });
 
 // --- Saját felhasználó lekérése ---
-app.get('/api/me', verifyTokenMiddleware, (req, res) => {
-  const user = db.prepare('SELECT id, name, class AS class_id, votes_used FROM users WHERE id = ?').get(req.user.id);
-  const userClassName = user.class_id
-    ? db.prepare('SELECT name FROM classes WHERE id = ?').get(user.class_id)?.name
-    : null;
-  res.json({ ...user, class: userClassName });
+app.get('/api/me', verifyTokenMiddleware, async (req, res) => {
+  const result = await pool.query(
+    'SELECT id, name, class_id, votes_used FROM users WHERE id=$1',
+    [req.user.id]
+  );
+  const user = result.rows[0];
+
+  let className = null;
+  if (user.class_id) {
+    const cls = await pool.query('SELECT name FROM classes WHERE id=$1', [user.class_id]);
+    if (cls.rows[0]) className = cls.rows[0].name;
+  }
+
+  res.json({ ...user, class: className });
 });
 
-// --- Statikus fájlok és SPA fallback ---
+// --- Statikus fájlok ---
 app.use(express.static(path.join(__dirname, '../client/dist')));
 app.get('*', (req, res) => {
   res.sendFile(path.resolve(__dirname, '../client/dist/index.html'));

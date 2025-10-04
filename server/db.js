@@ -1,5 +1,9 @@
-const Database = require('better-sqlite3');
-const dotenv = require('dotenv');
-dotenv.config();
-const db = new Database(process.env.DB_FILE || './sagvari.sqlite');
-module.exports = db;
+const { Pool } = require('pg');
+require('dotenv').config();
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
+
+module.exports = pool;

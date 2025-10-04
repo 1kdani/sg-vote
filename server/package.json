@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node index.js",
     "import-students": "node import_students.js",
-    "import-classes": "node import_classes.js"
+    "import-classes": "node import_classes.js",
+    "init-db": "node init_db.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
@@ -14,9 +15,8 @@
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.0",
     "socket.io": "^4.6.1",
-    "sqlite3": "^5.1.6",
-    "better-sqlite3": "^8.4.0",
-    "csv-parse": "^5.4.0"
+    "csv-parse": "^5.4.0",
+    "pg": "^8.11.3"
   },
   "engines": {
     "node": "18.x"
