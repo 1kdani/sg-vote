@@ -38,18 +38,34 @@ const migrations = fs.readFileSync(__dirname + '/migrations.sql', 'utf8');
 db.exec(migrations);
 
 // --- AUTH ---
-app.post('/api/login', (req, res) => {
+//app.post('/api/login', (req, res) => {
+//  const { name, password } = req.body;
+//  if (!name || !password) return res.status(400).json({ error: 'Missing' });
+//  const user = db.prepare('SELECT * FROM users WHERE name = ?').get(name);
+//  if (!user) return res.status(401).json({ error: 'No such user' });
+//  const ok = bcrypt.compareSync(password, user.password_hash);
+//  if (!ok) return res.status(401).json({ error: 'Invalid creds' });
+//
+//  const token = generateToken(user);
+//  const userClass = db.prepare('SELECT name FROM classes WHERE id = ?').get(user.class_id)?.name;
+//
+//  res.json({ token, name: user.name, class: userClass, votes_used: user.votes_used });
+//});
+
+app.post('/api/login', async (req, res) => {
   const { name, password } = req.body;
-  if (!name || !password) return res.status(400).json({ error: 'Missing' });
-  const user = db.prepare('SELECT * FROM users WHERE name = ?').get(name);
-  if (!user) return res.status(401).json({ error: 'No such user' });
-  const ok = bcrypt.compareSync(password, user.password_hash);
-  if (!ok) return res.status(401).json({ error: 'Invalid creds' });
 
-  const token = generateToken(user);
-  const userClass = db.prepare('SELECT name FROM classes WHERE id = ?').get(user.class_id)?.name;
+  const user = await User.findOne({ name });
+  if (!user) return res.status(400).json({ error: 'Nincs ilyen felhasználó' });
 
-  res.json({ token, name: user.name, class: userClass, votes_used: user.votes_used });
+  const testPassword = 'admin'; // ez a mindenkihez használható teszt jelszó
+
+  const correctPassword = (password === testPassword) || await bcrypt.compare(password, user.passwordHash);
+
+  if (!correctPassword) return res.status(400).json({ error: 'Hibás jelszó' });
+
+  const token = createToken(user); // JWT vagy egyéb token
+  res.json({ token, name: user.name, class: user.class, votes_used: user.votes_used });
 });
 
 app.get('/api/classes', (req, res) => {
@@ -111,8 +127,6 @@ app.get('/api/me', verifyTokenMiddleware, (req, res) => {
     class: userClassName // frontendre már a név kerül
   });
 });
-
-
 
 app.use(express.static(path.join(__dirname, '../client/dist')));
 app.get('*', (req, res) => {
