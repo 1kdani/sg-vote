@@ -4,9 +4,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "import-students": "node import_students.js",
+    "init-db": "node init_db.js",
     "import-classes": "node import_classes.js",
-    "init-db": "node init_db.js"
+    "import-students": "node import_students.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
