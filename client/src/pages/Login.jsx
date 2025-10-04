@@ -10,15 +10,17 @@ export default function Login({ onLogin }){
     e.preventDefault();
     try {
       const res = await axios.post('https://sg-vote-xxqh.onrender.com/api/login', { name, password });
-
-      // itt győződj meg róla, hogy a 'class' mező valódi névként kerül átadásra
+    
+      // A backend már visszaadja a class nevét
       const userData = {
         name: res.data.name,
-        class: res.data.class || '-', // ha null, fallback
+        class: res.data.class || 'Ismeretlen', // fallback, ha valamiért null
         votes_used: res.data.votes_used
       };
-
+    
+      // onLogin-nek átadjuk a teljes userData-t, amiben a class már benne van
       onLogin(res.data.token, userData);
+    
     } catch (e) {
       setErr(e.response?.data?.error || 'Hiba');
     }

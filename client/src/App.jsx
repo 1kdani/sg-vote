@@ -7,14 +7,21 @@ export default function App() {
   const [me, setMe] = useState(null);
 
   useEffect(() => {
-    if (token) {
+    if (token && !me) {  // <<< csak ha nincs még user adat
       fetch((import.meta.env.VITE_API_URL || 'https://sg-vote-xxqh.onrender.com') + '/api/me', {
         headers: { Authorization: 'Bearer ' + token }
-      }).then(r => r.json()).then(data => { if (data && data.id) setMe(data); else { setToken(null); localStorage.removeItem('token'); } }).catch(()=>{ setToken(null); localStorage.removeItem('token'); });
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data && data.id) setMe(data);
+        else { setToken(null); localStorage.removeItem('token'); }
+      })
+      .catch(() => {
+        setToken(null); 
+        localStorage.removeItem('token');
+      });
     }
-  }, [token]);
-
-
+  }, [token, me]);
 
   if (!token) return <Login onLogin={(t, user) => { setToken(t); localStorage.setItem('token', t); setMe(user); }} />;
   return <Dashboard token={token} me={me} onLogout={() => { setToken(null); localStorage.removeItem('token'); setMe(null); }} />
