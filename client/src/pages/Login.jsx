@@ -6,16 +6,22 @@ export default function Login({ onLogin }){
   const [password, setPassword] = useState('')
   const [err, setErr] = useState('')
 
-  async function submit(e){
+  async function submit(e) {
     e.preventDefault();
-    try{
+    try {
       const res = await axios.post('https://sg-vote-xxqh.onrender.com/api/login', { name, password });
-      onLogin(res.data.token, { 
-        name: res.data.name, 
-        class: res.data.class || "-", 
-        votes_used: res.data.votes_used 
-      });
-    } catch (e) { setErr(e.response?.data?.error || 'Hiba'); }
+
+      // itt győződj meg róla, hogy a 'class' mező valódi névként kerül átadásra
+      const userData = {
+        name: res.data.name,
+        class: res.data.class || '-', // ha null, fallback
+        votes_used: res.data.votes_used
+      };
+
+      onLogin(res.data.token, userData);
+    } catch (e) {
+      setErr(e.response?.data?.error || 'Hiba');
+    }
   }
 
   return (
