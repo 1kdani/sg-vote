@@ -1,3 +1,11 @@
+-- classes: list of classes, room and theme
+CREATE TABLE IF NOT EXISTS classes (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  room TEXT,
+  theme TEXT
+);
+
 -- users: minden diák
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
@@ -6,14 +14,6 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   votes_used INTEGER NOT NULL DEFAULT 0,
   FOREIGN KEY (class_id) REFERENCES classes(id)
-);
-
--- classes: list of classes, room and theme
-CREATE TABLE IF NOT EXISTS classes (
-  id SERIAL PRIMARY KEY,
-  name TEXT NOT NULL UNIQUE,
-  room TEXT,
-  theme TEXT
 );
 
 -- votes: minden egyes leadott szavazatot naplózza
