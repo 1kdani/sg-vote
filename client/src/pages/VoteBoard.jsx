@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import axios from 'axios'
 
 export default function VoteBoard({ classes = [], token, user, onUserUpdate }){
+  if (!Array.isArray(classes)) classes = [];
+  
   const [busy, setBusy] = useState(false)
   const remaining = 5 - (user?.votes_used || 0)
 

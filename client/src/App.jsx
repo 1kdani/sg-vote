@@ -8,7 +8,7 @@ export default function App() {
 
   useEffect(() => {
     if (token) {
-      fetch(process.env.REACT_APP_API_BASE_URL ? process.env.REACT_APP_API_BASE_URL + '/api/me' : 'https://sg-vote-xxqh.onrender.com/api/me', {
+      fetch((import.meta.env.VITE_API_URL || 'https://sg-vote-xxqh.onrender.com') + '/api/me', {
         headers: { Authorization: 'Bearer ' + token }
       }).then(r => r.json()).then(data => { if (data && data.id) setMe(data); else { setToken(null); localStorage.removeItem('token'); } }).catch(()=>{ setToken(null); localStorage.removeItem('token'); });
     }
