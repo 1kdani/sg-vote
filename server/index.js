@@ -177,22 +177,6 @@ app.get('/api/me', verifyTokenMiddleware, async (req, res) => {
   res.json({ ...user, class: className });
 });
 
-app.get('/api/admin/stats', authMiddleware, async (req, res) => {
-  if (!req.user.is_admin) return res.status(403).json({ error: 'Forbidden' });
-
-  const classes = await db.query('SELECT id, name, votes FROM classes ORDER BY votes DESC');
-  const totalVotes = await db.query('SELECT SUM(votes) AS total FROM classes');
-  const activeUsers = await db.query('SELECT COUNT(*) FROM users WHERE last_seen > NOW() - interval \'5 minutes\'');
-
-  res.json({
-    top3: classes.rows.slice(0, 3),
-    all: classes.rows,
-    totalVotes: totalVotes.rows[0].total || 0,
-    activeUsers: activeUsers.rows[0].count || 0
-  });
-});
-
-
 // --- Statikus fájlok ---
 app.use(express.static(path.join(__dirname, '../client/dist')));
 app.get('*', (req, res) => {
