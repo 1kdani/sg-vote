@@ -45,6 +45,7 @@ export default function Dashboard({ token, me, onLogout }){
         <section className="lg:col-span-2">
           <VoteBoard classes={classes} token={token} user={user} onUserUpdate={setUser} />
         </section>
+        {/*
         <aside className="space-y-4">
           <div className="bg-white p-4 rounded shadow">
             <h3 className="font-semibold mb-2">TOP 3</h3>
@@ -77,6 +78,7 @@ export default function Dashboard({ token, me, onLogout }){
             )}
           </div>
         </aside>
+        */}
       </main>
     </div>
   )

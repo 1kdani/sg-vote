@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import Admin from './pages/Admin'
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -13,8 +14,12 @@ export default function App() {
       })
       .then(r => r.json())
       .then(data => {
-        if (data && data.id) setMe(data);
-        else { setToken(null); localStorage.removeItem('token'); }
+        if (data && data.id !== undefined) {
+          setMe(data);
+        } else {
+          setToken(null);
+          localStorage.removeItem('token');
+        }
       })
       .catch(() => {
         setToken(null); 
@@ -23,6 +28,27 @@ export default function App() {
     }
   }, [token, me]);
 
-  if (!token) return <Login onLogin={(t, user) => { setToken(t); localStorage.setItem('token', t); setMe(user); }} />;
-  return <Dashboard token={token} me={me} onLogout={() => { setToken(null); localStorage.removeItem('token'); setMe(null); }} />
+  if (!token) {
+    return (
+      <Login onLogin={(t, user) => {
+        setToken(t);
+        localStorage.setItem('token', t);
+        setMe(user);
+      }} />
+    );
+  }
+
+  if (me?.is_admin) {
+    return <Admin token={token} me={me} onLogout={() => {
+      setToken(null);
+      localStorage.removeItem('token');
+      setMe(null);
+    }} />
+  }
+
+  return <Dashboard token={token} me={me} onLogout={() => {
+    setToken(null);
+    localStorage.removeItem('token');
+    setMe(null);
+  }} />
 }

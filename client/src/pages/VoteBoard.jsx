@@ -31,7 +31,7 @@ export default function VoteBoard({ classes = [], token, user, onUserUpdate }){
                 <div className="font-medium">{c.name}</div>
                 <div className="text-sm text-slate-500">Terem: {c.room || '—'} • Téma: {c.theme || '—'}</div>
               </div>
-              <div className="text-2xl font-semibold">{c.votes}</div>
+              {/*<div className="text-2xl font-semibold">{c.votes}</div>*/}
             </div>
             <div className="mt-3 flex gap-2">
               <button disabled={busy || remaining<=0 || (user && user.class === c.name)} onClick={()=>vote(c.id,1)} className="px-3 py-1 rounded border">+1</button>

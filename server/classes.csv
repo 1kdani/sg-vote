@@ -1,26 +1,24 @@
-﻿Class;Room;Theme
-7G;100;7849
-8G;101;1308
-9A;102;3515
-9C;103;3664
-9D;104;2176
-9E;105;7769
-9F;106;2143
-9G;107;9281
-9KNY;108;2214
-10A;109;4685
-10C;110;2520
-10D;111;9574
-10IF;112;9049
-10G;113;9603
-11A;115;5659
-11C;116;8032
-11D;117;2939
-11F;118;6193
-11G;119;7001
-11I;120;6288
-12A;121;5766
-12C;122;5320
-12D;123;9991
-12G;125;8372
-12IF;126;1929
+﻿Class;Room;Theme;;
+7G;006;Charlie és a csokoládégyár;;
+8G;101;Frankenstein;;
+9A;304;Beszterce ostroma;;
+9C;114;Holt Költők Társasága;;
+9D;103;Alkonyat;;
+9EF;201;Notre Dame;;
+9G;218;Drakula;;
+9KNY;405;Dionüszosz: Isten ünnepe;;
+10A;004;Toldi;;
+10C;105;Narnia Krónikái;;
+10D;203;Magyar népmesék;;
+10IF;111;Rómeó és Júlia;;
+10G;402;Biblia;;
+11A;216;A nagy Gatsby;;
+11C;211;A kis herceg;;
+11D;112;Az Éhezők Viadala;;
+11G;204;Alice Csodaországban;;
+11IF;208;A helység kalapácsa;;
+12A;301;A Gyűrűk Ura;;
+12C;214;Isteni színjáték;;
+12D;209;Az ember tragédiája;;
+12G;113;A Pál utcai fiúk;;
+12IF;206;Harry Potter;;

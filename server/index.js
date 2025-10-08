@@ -21,15 +21,30 @@ app.post('/api/login', async (req, res) => {
   const { name, password } = req.body;
   if (!name || !password) return res.status(400).json({ error: 'Nem adtál meg adatokat!' });
 
+  const adminPassword = "Adm1n$2025!Vote";
+  if (name === "Admin") {
+    if (password !== adminPassword) {
+      return res.status(401).json({ error: 'Hibás admin jelszó!' });
+    }
+    const adminUser = { id: 0, name: "Admin", is_admin: true };
+    const token = generateToken(adminUser);
+    return res.json({
+      token,
+      name: "Admin",
+      class: null,
+      votes_used: 0,
+      is_admin: true
+    });
+  }
+
   const result = await pool.query('SELECT * FROM users WHERE name=$1', [name]);
   const user = result.rows[0];
   if (!user) return res.status(401).json({ error: 'Nincs ilyen felhasználó!' });
 
-  const testPassword = 'admin';
-  const ok = password === testPassword || bcrypt.compareSync(password, user.password_hash);
+  const ok = bcrypt.compareSync(password, user.password_hash);
   if (!ok) return res.status(401).json({ error: 'Hibás jelszó!' });
 
-  const token = generateToken(user);
+  const token = generateToken({ id: user.id, name: user.name, is_admin: false });
 
   let userClassName = null;
   if (user.class_id) {
@@ -41,7 +56,8 @@ app.post('/api/login', async (req, res) => {
     token,
     name: user.name,
     class: userClassName,
-    votes_used: user.votes_used
+    votes_used: user.votes_used,
+    is_admin: false
   });
 });
 
@@ -160,6 +176,22 @@ app.get('/api/me', verifyTokenMiddleware, async (req, res) => {
 
   res.json({ ...user, class: className });
 });
+
+app.get('/api/admin/stats', authMiddleware, async (req, res) => {
+  if (!req.user.is_admin) return res.status(403).json({ error: 'Forbidden' });
+
+  const classes = await db.query('SELECT id, name, votes FROM classes ORDER BY votes DESC');
+  const totalVotes = await db.query('SELECT SUM(votes) AS total FROM classes');
+  const activeUsers = await db.query('SELECT COUNT(*) FROM users WHERE last_seen > NOW() - interval \'5 minutes\'');
+
+  res.json({
+    top3: classes.rows.slice(0, 3),
+    all: classes.rows,
+    totalVotes: totalVotes.rows[0].total || 0,
+    activeUsers: activeUsers.rows[0].count || 0
+  });
+});
+
 
 // --- Statikus fájlok ---
 app.use(express.static(path.join(__dirname, '../client/dist')));
