@@ -6,7 +6,6 @@ const bcrypt = require('bcrypt');
 const path = require('path');
 const pool = require('./db');
 const { generateToken, verifyTokenMiddleware } = require('./auth');
-const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
@@ -19,15 +18,18 @@ app.use(express.json());
 // --- Bejelentkezés ---
 app.post('/api/login', async (req, res) => {
   const { name, password } = req.body;
-  if (!name || !password) return res.status(400).json({ error: 'Nem adtál meg adatokat!' });
+  if (!name || !password) {
+    return res.status(400).json({ error: 'Nem adtál meg adatokat!' });
+  }
 
   const adminPassword = "Adm1n$2025!Vote";
+
+  // ---- Admin login külön kezelve ----
   if (name === "Admin") {
     if (password !== adminPassword) {
       return res.status(401).json({ error: 'Hibás admin jelszó!' });
     }
-    const adminUser = { id: 0, name: "Admin", is_admin: true };
-    const token = generateToken(adminUser);
+    const token = generateToken({ id: 0, name: "Admin", is_admin: true });
     return res.json({
       token,
       name: "Admin",
@@ -37,6 +39,7 @@ app.post('/api/login', async (req, res) => {
     });
   }
 
+  // ---- Normál felhasználó login ----
   const result = await pool.query('SELECT * FROM users WHERE name=$1', [name]);
   const user = result.rows[0];
   if (!user) return res.status(401).json({ error: 'Nincs ilyen felhasználó!' });
@@ -162,6 +165,7 @@ app.post('/api/admin/add-class', async (req, res) => {
 
 // --- Saját felhasználó lekérése ---
 app.get('/api/me', verifyTokenMiddleware, async (req, res) => {
+  // Admin esetén virtuális user visszaadása
   if (req.user.is_admin) {
     return res.json({
       id: 0,
@@ -172,6 +176,7 @@ app.get('/api/me', verifyTokenMiddleware, async (req, res) => {
     });
   }
 
+  // Normál user
   const result = await pool.query(
     'SELECT id, name, class_id, votes_used FROM users WHERE id=$1',
     [req.user.id]
