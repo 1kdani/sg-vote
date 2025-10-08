@@ -13,7 +13,7 @@ export default function Admin({ token, onLogout }) {
     .catch(err => console.error(err))
   }, [token])
 
-  if (!stats) return <div>Betöltés...</div>
+  if (!stats || !stats.top3) return <div>Betöltés...</div>
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">

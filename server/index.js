@@ -148,6 +148,39 @@ app.post('/api/vote', verifyTokenMiddleware, async (req, res) => {
   res.json({ ok: true, user: updatedUser });
 });
 
+app.get('/api/admin/stats', verifyTokenMiddleware, async (req, res) => {
+  if (!req.user.is_admin) {
+    return res.status(403).json({ error: "Nincs jogosultság" });
+  }
+
+  const top3 = await pool.query(`
+    SELECT c.id, c.name, COUNT(v.id) as votes
+    FROM classes c
+    LEFT JOIN votes v ON v.class_id = c.id
+    GROUP BY c.id
+    ORDER BY votes DESC
+    LIMIT 3
+  `);
+
+  const all = await pool.query(`
+    SELECT c.id, c.name, COUNT(v.id) as votes
+    FROM classes c
+    LEFT JOIN votes v ON v.class_id = c.id
+    GROUP BY c.id
+    ORDER BY votes DESC
+  `);
+
+  const totalVotes = await pool.query(`SELECT COUNT(*) FROM votes`);
+  const activeUsers = await pool.query(`SELECT COUNT(*) FROM users WHERE votes_used > 0`);
+
+  res.json({
+    top3: top3.rows,
+    all: all.rows,
+    totalVotes: parseInt(totalVotes.rows[0].count),
+    activeUsers: parseInt(activeUsers.rows[0].count)
+  });
+});
+
 // --- Admin: új osztály hozzáadása ---
 app.post('/api/admin/add-class', async (req, res) => {
   const { name, room, theme } = req.body;
