@@ -31,7 +31,7 @@ export default function Dashboard({ token, me, onLogout }){
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="flex items-center justify-between p-4 bg-white shadow">
+      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-4 bg-white shadow">
         <div>
           <h2 className="text-xl font-semibold">Ságvári Nap — Szavazás</h2>
           <div className="text-sm text-slate-500">Bejelentkezve: {user?.name} ({user?.class})</div>
@@ -42,7 +42,7 @@ export default function Dashboard({ token, me, onLogout }){
         </div>
       </header>
 
-      <main className="p-6 grid lg:grid-cols-3 gap-6">
+      <main className="p-6 grid lg:grid-cols-3 gap-6 mt-24">
         {user?.is_admin ? (
           // ha admin, akkor az Admin oldalt mutatjuk
           <section className="lg:col-span-3">
@@ -55,6 +55,9 @@ export default function Dashboard({ token, me, onLogout }){
           </section>
         )}
       </main>
+      <footer className="text-center py-4 text-sm text-slate-500 border-t bg-white mt-10">
+        « Készítette: <b>Kubát Dániel 10.I osztályos tanuló</b> »
+      </footer>
       
       {/*
       <main className="p-6 grid lg:grid-cols-3 gap-6">
