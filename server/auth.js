@@ -4,7 +4,7 @@ const db = require('./db');
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
 
 function generateToken(user) {
-  const payload = { id: user.id, name: user.name, class: user.class };
+  const payload = { ...user };
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '8h' });
 }
 
