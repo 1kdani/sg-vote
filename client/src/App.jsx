@@ -8,28 +8,18 @@ export default function App() {
   const [me, setMe] = useState(null);
 
   useEffect(() => {
-    if (token && !me) {
-      fetch((import.meta.env.VITE_API_URL || 'https://sg-vote-xxqh.onrender.com') + '/api/me', {
-        headers: { Authorization: 'Bearer ' + token }
-      })
-      .then(r => {
-        if (!r.ok) throw new Error('Hiba a /api/me hívásnál');
-        return r.json()
-      })
-      .then(data => {
-        if (data && data.id !== undefined) {
-          setMe(data);
-        } else {
-          setToken(null);
-          localStorage.removeItem('token');
-        }
-      })
-      .catch(() => {
-        setToken(null); 
-        localStorage.removeItem('token');
-      });
-    }
+    if (!token || !me?.is_admin) return; // Ha nincs token vagy nem admin, ne próbálkozzunk
+
+    axios.get('https://sg-vote-xxqh.onrender.com/api/admin/stats', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(r => setStats(r.data))
+    .catch(err => {
+      console.error(err);
+      alert('Nem sikerült lekérni a statisztikákat. Ellenőrizd a bejelentkezést és a token-t.');
+    })
   }, [token, me]);
+
 
   if (!token) {
     return (
