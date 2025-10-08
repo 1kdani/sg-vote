@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios'
 
-export default function Admin({ token, onLogout }) {
+export default function Admin({ token, me, onLogout }) {
   const [stats, setStats] = useState(null)
 
   useEffect(() => {
-    if (!token) return; // Ha nincs token, ne próbálkozzunk
+    if (!token || !me?.is_admin) return;
 
     axios.get('https://sg-vote-xxqh.onrender.com/api/admin/stats', {
       headers: { Authorization: `Bearer ${token}` }
@@ -14,8 +14,8 @@ export default function Admin({ token, onLogout }) {
     .catch(err => {
       console.error(err);
       alert('Nem sikerült lekérni a statisztikákat. Ellenőrizd a bejelentkezést és a token-t.');
-    })
-  }, [token])
+    });
+  }, [token, me]);
 
   if (!stats || !stats.top3) return <div>Betöltés...</div>
 

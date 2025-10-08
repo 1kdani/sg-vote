@@ -2,24 +2,31 @@ import React, { useEffect, useState } from 'react'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Admin from './pages/Admin'
+import axios from 'axios'
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [me, setMe] = useState(null);
 
   useEffect(() => {
-    if (!token || !me?.is_admin) return; // Ha nincs token vagy nem admin, ne próbálkozzunk
+    if (!token) return;
 
-    axios.get('https://sg-vote-xxqh.onrender.com/api/admin/stats', {
-      headers: { Authorization: `Bearer ${token}` }
+    axios.get((import.meta.env.VITE_API_URL || 'https://sg-vote-xxqh.onrender.com') + '/api/me', {
+      headers: { Authorization: 'Bearer ' + token }
     })
-    .then(r => setStats(r.data))
-    .catch(err => {
-      console.error(err);
-      alert('Nem sikerült lekérni a statisztikákat. Ellenőrizd a bejelentkezést és a token-t.');
+    .then(r => {
+      if (r.data?.id !== undefined) {
+        setMe(r.data);
+      } else {
+        setToken(null);
+        localStorage.removeItem('token');
+      }
     })
-  }, [token, me]);
-
+    .catch(() => {
+      setToken(null);
+      localStorage.removeItem('token');
+    });
+  }, [token]);
 
   if (!token) {
     return (
