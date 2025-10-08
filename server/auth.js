@@ -21,4 +21,8 @@ function verifyTokenMiddleware(req, res, next) {
   }
 }
 
-module.exports = { generateToken, verifyTokenMiddleware };
+function verifyToken(token) {
+  return jwt.verify(token, JWT_SECRET);
+}
+
+module.exports = { generateToken, verifyToken, verifyTokenMiddleware };

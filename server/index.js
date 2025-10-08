@@ -5,7 +5,7 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 const path = require('path');
 const pool = require('./db');
-const { generateToken, verifyTokenMiddleware } = require('./auth');
+const { generateToken, verifyToken, verifyTokenMiddleware } = require('./auth');
 
 const app = express();
 const server = http.createServer(app);
