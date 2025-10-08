@@ -18,7 +18,14 @@ export default function Login({ onLogin }){
       is_admin: res.data.is_admin || false
     };
     
-      onLogin(res.data.token, userData);
+      onLogin(res.data.token, {
+        name: res.data.name,
+        class: res.data.class,
+        votes_used: res.data.votes_used,
+        is_admin: res.data.is_admin
+      });
+      localStorage.setItem('token', res.data.token);
+
     
     } catch (e) {
       setErr(e.response?.data?.error || 'Hiba történt');

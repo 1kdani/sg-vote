@@ -5,12 +5,16 @@ export default function Admin({ token, onLogout }) {
   const [stats, setStats] = useState(null)
 
   useEffect(() => {
-    if (!token) return
+    if (!token) return; // Ha nincs token, ne próbálkozzunk
+
     axios.get('https://sg-vote-xxqh.onrender.com/api/admin/stats', {
-      headers: { Authorization: 'Bearer ' + token }
+      headers: { Authorization: `Bearer ${token}` }
     })
     .then(r => setStats(r.data))
-    .catch(err => console.error(err))
+    .catch(err => {
+      console.error(err);
+      alert('Nem sikerült lekérni a statisztikákat. Ellenőrizd a bejelentkezést és a token-t.');
+    })
   }, [token])
 
   if (!stats || !stats.top3) return <div>Betöltés...</div>

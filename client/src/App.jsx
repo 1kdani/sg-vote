@@ -12,7 +12,10 @@ export default function App() {
       fetch((import.meta.env.VITE_API_URL || 'https://sg-vote-xxqh.onrender.com') + '/api/me', {
         headers: { Authorization: 'Bearer ' + token }
       })
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error('Hiba a /api/me hívásnál');
+        return r.json()
+      })
       .then(data => {
         if (data && data.id !== undefined) {
           setMe(data);
@@ -39,16 +42,28 @@ export default function App() {
   }
 
   if (me?.is_admin) {
-    return <Admin token={token} me={me} onLogout={() => {
-      setToken(null);
-      localStorage.removeItem('token');
-      setMe(null);
-    }} />
+    return (
+      <Admin
+        token={token}
+        me={me}
+        onLogout={() => {
+          setToken(null);
+          localStorage.removeItem('token');
+          setMe(null);
+        }}
+      />
+    )
   }
 
-  return <Dashboard token={token} me={me} onLogout={() => {
-    setToken(null);
-    localStorage.removeItem('token');
-    setMe(null);
-  }} />
+  return (
+    <Dashboard
+      token={token}
+      me={me}
+      onLogout={() => {
+        setToken(null);
+        localStorage.removeItem('token');
+        setMe(null);
+      }}
+    />
+  )
 }
