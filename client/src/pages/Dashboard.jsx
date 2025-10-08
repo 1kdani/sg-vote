@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import axios from 'axios'
 import { io } from 'socket.io-client'
 import VoteBoard from './VoteBoard'
+import Admin from './Admin'
 
 export default function Dashboard({ token, me, onLogout }){
   const [classes, setClasses] = useState([])
@@ -42,10 +43,24 @@ export default function Dashboard({ token, me, onLogout }){
       </header>
 
       <main className="p-6 grid lg:grid-cols-3 gap-6">
+        {user?.is_admin ? (
+          // ha admin, akkor az Admin oldalt mutatjuk
+          <section className="lg:col-span-3">
+            <Admin token={token} onLogout={onLogout} />
+          </section>
+        ) : (
+          // ha nem admin, akkor a szavazás
+          <section className="lg:col-span-2">
+            <VoteBoard classes={classes} token={token} user={user} onUserUpdate={setUser} />
+          </section>
+        )}
+      </main>
+      
+      {/*
+      <main className="p-6 grid lg:grid-cols-3 gap-6">
         <section className="lg:col-span-2">
           <VoteBoard classes={classes} token={token} user={user} onUserUpdate={setUser} />
         </section>
-        {/*
         <aside className="space-y-4">
           <div className="bg-white p-4 rounded shadow">
             <h3 className="font-semibold mb-2">TOP 3</h3>
@@ -78,8 +93,8 @@ export default function Dashboard({ token, me, onLogout }){
             )}
           </div>
         </aside>
-        */}
       </main>
+      */}
     </div>
   )
 }
