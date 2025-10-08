@@ -12,10 +12,11 @@ export default function Login({ onLogin }){
       const res = await axios.post('https://sg-vote-xxqh.onrender.com/api/login', { name, password });
     
       const userData = {
-        name: res.data.name,
-        class: res.data.class || '-',
-        votes_used: res.data.votes_used
-      };
+      name: res.data.name,
+      class: res.data.class || '-',
+      votes_used: res.data.votes_used,
+      is_admin: res.data.is_admin || false
+    };
     
       onLogin(res.data.token, userData);
     
