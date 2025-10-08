@@ -13,7 +13,7 @@ export default function Login({ onLogin }){
     
       const userData = {
         name: res.data.name,
-        class: res.data.class || 'Ismeretlen',
+        class: res.data.class || '-',
         votes_used: res.data.votes_used
       };
     
