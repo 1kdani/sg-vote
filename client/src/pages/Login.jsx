@@ -50,9 +50,6 @@ export default function Login({ onLogin }){
           <button className="px-4 py-2 bg-sky-600 text-white rounded-lg">Bejelentkezés</button>
         </div>
       </form>
-      <footer className="text-center py-4 text-sm text-slate-500 border-t bg-white mt-10">
-        « Készítette: <b>Kubát Dániel 10.I osztályos tanuló</b> »
-      </footer>
     </div>
   )
 }
