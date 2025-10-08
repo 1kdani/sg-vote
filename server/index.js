@@ -162,11 +162,22 @@ app.post('/api/admin/add-class', async (req, res) => {
 
 // --- Saját felhasználó lekérése ---
 app.get('/api/me', verifyTokenMiddleware, async (req, res) => {
+  if (req.user.is_admin) {
+    return res.json({
+      id: 0,
+      name: "Admin",
+      class: null,
+      votes_used: 0,
+      is_admin: true
+    });
+  }
+
   const result = await pool.query(
     'SELECT id, name, class_id, votes_used FROM users WHERE id=$1',
     [req.user.id]
   );
   const user = result.rows[0];
+  if (!user) return res.status(404).json({ error: "Felhasználó nem található!" });
 
   let className = null;
   if (user.class_id) {
@@ -174,7 +185,7 @@ app.get('/api/me', verifyTokenMiddleware, async (req, res) => {
     if (cls.rows[0]) className = cls.rows[0].name;
   }
 
-  res.json({ ...user, class: className });
+  res.json({ ...user, class: className, is_admin: false });
 });
 
 // --- Statikus fájlok ---
