@@ -11,7 +11,7 @@ export default function App() {
   useEffect(() => {
     if (!token) return;
 
-    axios.get((import.meta.env.VITE_API_URL || 'https://sg-vote-xxqh.onrender.com') + '/api/me', {
+    axios.get('https://sg-vote-xxqh.onrender.com/api/me', {
       headers: { Authorization: 'Bearer ' + token }
     })
     .then(r => {
