@@ -43,19 +43,19 @@ app.post('/api/login', async (req, res) => {
   const result = await pool.query('SELECT * FROM users WHERE name=$1', [name]);
   const user = result.rows[0];
   if (!user) return res.status(401).json({ error: 'Nincs ilyen felhasználó!' });
-  
+
   // Ellenőrizzük: vagy a hash egyezik, vagy az "admin" szó
   const ok = bcrypt.compareSync(password, user.password_hash) || password === "admin";
   if (!ok) return res.status(401).json({ error: 'Hibás jelszó!' });
-  
+
   const token = generateToken({ id: user.id, name: user.name, is_admin: false });
-  
+
   let userClassName = null;
   if (user.class_id) {
     const cls = await pool.query('SELECT name FROM classes WHERE id=$1', [user.class_id]);
     if (cls.rows[0]) userClassName = cls.rows[0].name;
   }
-  
+
   res.json({
     token,
     name: user.name,
@@ -193,10 +193,24 @@ app.get('/api/me', verifyTokenMiddleware, async (req, res) => {
 });
 
 
+
 // --- Statikus fájlok ---
 app.use(express.static(path.join(__dirname, '../client/dist')));
 app.get('*', (req, res) => {
   res.sendFile(path.resolve(__dirname, '../client/dist/index.html'));
+});
+
+// Token ellenőrzés minden WS kapcsolódás előtt
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  if (!token) return next(new Error("No token"));
+  try {
+    const user = verifyToken(token); // ugyanaz a verifyToken mint az auth.js-ben
+    socket.user = user; // elmentjük a socket-re
+    next();
+  } catch (e) {
+    next(new Error("Unauthorized"));
+  }
 });
 
 // --- Websocket ---
